@@ -17,7 +17,8 @@ int32_t MaxInt32(int32_t a, int32_t b)
     return a > b ? a : b;
 }
 
-int32_t EdgeFunction(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2)
+template<class T>
+T EdgeFunction(T x0, T y0, T x1, T y1, T x2, T y2)
 {
     return (x2 - x0) * (y1 - y0) - (y2 - y0) * (x1 - x0);
 }
@@ -132,20 +133,20 @@ int main(int argc, char* argv[])
         y_max = y_max > height - 1 ? height - 1 : y_max;
 
         // Compute double triangle area using edge function
-        int32_t area = EdgeFunction(x0i, y0i, x1i, y1i, x2i, y2i);
+        float double_area = EdgeFunction<float>(x0f, y0f, x1f, y1f, x2f, y2f);
 
         // Backface culling
-        if (area <= 0)
+        if (double_area <= 0.0f)
             continue;
+
+        // Precompute Z vectors
+        float z10f = (z1f - z0f) / double_area;
+        float z20f = (z2f - z0f) / double_area;
 
         // Calculate bias for fill rule
         int32_t bias0 = IsTopLeftEdge(x1i, y1i, x2i, y2i) ? 0 : 1;
         int32_t bias1 = IsTopLeftEdge(x2i, y2i, x0i, y0i) ? 0 : 1;
         int32_t bias2 = IsTopLeftEdge(x0i, y0i, x1i, y1i) ? 0 : 1;
-
-        // Precompute Z vectors
-        float z10f = (z1f - z0f) / area;
-        float z20f = (z2f - z0f) / area;
 
         // Iterate over all pixels within the bounds
         for (int32_t y = y_min; y <= y_max; ++y)
@@ -154,9 +155,9 @@ int main(int argc, char* argv[])
             {
                 // Compute barycentric coordinates
                 // Can be optimized by precomputing starting point + increments
-                int32_t w0 = EdgeFunction(x1i, y1i, x2i, y2i, x, y);
-                int32_t w1 = EdgeFunction(x2i, y2i, x0i, y0i, x, y);
-                int32_t w2 = EdgeFunction(x0i, y0i, x1i, y1i, x, y);
+                int32_t w0 = EdgeFunction<int32_t>(x1i, y1i, x2i, y2i, x, y);
+                int32_t w1 = EdgeFunction<int32_t>(x2i, y2i, x0i, y0i, x, y);
+                int32_t w2 = EdgeFunction<int32_t>(x0i, y0i, x1i, y1i, x, y);
 
                 // Test if pixel is inside triangle
                 if (w0 < bias0 || w1 < bias1 || w2 < bias2)
